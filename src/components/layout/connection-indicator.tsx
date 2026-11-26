@@ -1,4 +1,5 @@
 import { isBackendConfigured } from '@/config/env'
+import { getAccessToken } from '@/api/http'
 import { useOnline } from '@/hooks/use-online'
 import { useModeStore } from '@/stores/mode-store'
 import { cn } from '@/lib/utils'
@@ -8,7 +9,8 @@ export function useConnectionState() {
   const mode = useModeStore((s) => s.mode)
   if (!online) return { tone: 'danger', label: 'Нет сети', detail: 'Устройство не в сети' } as const
   if (mode === 'demo') return { tone: 'warning', label: 'Демо', detail: 'Демо-режим: данные не с сервера' } as const
-  if (!isBackendConfigured) return { tone: 'muted', label: 'Не настроен', detail: 'Адрес сервера не указан' } as const
+  if (!isBackendConfigured) return { tone: 'danger', label: 'Нет адреса', detail: 'Сервер не настроен' } as const
+  if (!getAccessToken()) return { tone: 'muted', label: 'Гость', detail: 'Войди в аккаунт' } as const
   return { tone: 'success', label: 'Сервер', detail: 'Подключено к ARGO' } as const
 }
 

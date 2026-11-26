@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { toUserMessage } from '@/api/errors'
 import { useGateway } from '@/features/auth/use-session'
-import { useCampaigns, useCharacterSheet, gameKeys } from '@/features/game/queries'
+import { useAllocateAttribute, useCampaigns, useCharacterSheet, gameKeys } from '@/features/game/queries'
 
 export default function CharacterPage() {
   const gateway = useGateway()
@@ -13,6 +13,7 @@ export default function CharacterPage() {
   const campaigns = useCampaigns('active')
   const campaignId = campaigns.data?.[0]?.id ?? ''
   const sheet = useCharacterSheet(campaignId)
+  const allocate = useAllocateAttribute(campaignId)
 
   const action = useMutation({
     mutationFn: (input: { kind: 'use' | 'equip' | 'unequip'; id: string }) => {
@@ -63,6 +64,27 @@ export default function CharacterPage() {
           {character.unspent_points > 0 ? ` · нераспределено ${character.unspent_points}` : ''}
         </p>
       </section>
+
+      {character.unspent_points > 0 && (
+        <section className="hud-panel flex flex-col gap-3 p-5" aria-label="Очки развития">
+          <h2 className="hud-label">Распредели очки</h2>
+          <p className="text-xs text-muted-foreground">Доступно {character.unspent_points} очков. Код сервера применит изменения.</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(character.attributes).map((key) => (
+              <Button
+                key={key}
+                size="sm"
+                variant="secondary"
+                disabled={allocate.isPending}
+                onClick={() => allocate.mutate({ campaign_id: campaignId, allocations: [{ id: key, delta: 1 }] })}
+              >
+                + {key}
+              </Button>
+            ))}
+          </div>
+          {allocate.isError && <Notice tone="danger">{toUserMessage(allocate.error)}</Notice>}
+        </section>
+      )}
 
       <section className="hud-panel flex flex-col gap-3 p-5">
         <h2 className="hud-label">Сумка</h2>

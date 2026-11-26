@@ -21,6 +21,9 @@ export const gameKeys = {
   map: (mode: string, id: string) => ['game', mode, 'campaign', id, 'map'] as const,
   sheet: (mode: string, id: string) => ['game', mode, 'campaign', id, 'sheet'] as const,
   inventory: (mode: string, id: string) => ['game', mode, 'campaign', id, 'inventory'] as const,
+  invites: (mode: string) => ['game', mode, 'invites'] as const,
+  classes: (mode: string, id: string) => ['game', mode, 'campaign', id, 'classes'] as const,
+  shop: (mode: string, id: string) => ['game', mode, 'campaign', id, 'shop'] as const,
   notifications: (mode: string) => ['game', mode, 'notifications'] as const,
 }
 
@@ -117,6 +120,35 @@ export function useCharacterSheet(campaignId: string) {
 export function useInventory(campaignId: string) {
   const g = useGateway()
   return useQuery({ queryKey: gameKeys.inventory(g.mode, campaignId), queryFn: () => g.character.getInventory(campaignId), staleTime: STALE, retry: retryTransient })
+}
+
+export function useInvites() {
+  const g = useGateway()
+  return useQuery({
+    queryKey: gameKeys.invites(g.mode),
+    queryFn: () => g.campaigns.listInvites(),
+    staleTime: STALE,
+    retry: retryTransient,
+  })
+}
+
+export function useClassSelection(campaignId: string) {
+  const g = useGateway()
+  return useQuery({
+    queryKey: gameKeys.classes(g.mode, campaignId),
+    queryFn: () => g.campaigns.classes(campaignId),
+    retry: retryTransient,
+  })
+}
+
+export function useShop(campaignId: string) {
+  const g = useGateway()
+  return useQuery({
+    queryKey: gameKeys.shop(g.mode, campaignId),
+    queryFn: () => g.campaigns.shop(campaignId),
+    staleTime: STALE,
+    retry: retryTransient,
+  })
 }
 
 export function useNotifications() {

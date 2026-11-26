@@ -269,6 +269,39 @@ export const allocateInputSchema = z.object({
 })
 export type AllocateInput = z.infer<typeof allocateInputSchema>
 
+export const inviteSchema = z.object({
+  id: z.number().or(z.string()).transform(String),
+  campaign_id: z.string(),
+  campaign_name: z.string(),
+  inviter: z.string(),
+})
+export type Invite = z.infer<typeof inviteSchema>
+
+export const classSelectionSchema = z.object({
+  pending: z.boolean(),
+  offers: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    category_name: z.string().nullish(),
+    role: z.string().nullish(),
+    description: z.string().nullish(),
+    attributes: z.record(z.string(), z.number()).default({}),
+  }).passthrough()).default([]),
+  selected: z.object({ id: z.string().nullish(), name: z.string().nullish() }).nullish(),
+}).passthrough()
+export type ClassSelection = z.infer<typeof classSelectionSchema>
+
+export const shopItemSchema = itemSchema.extend({
+  price: z.number().int().nonnegative(),
+  currency: z.string(),
+  stock: z.number().int().nonnegative(),
+})
+export const shopSchema = z.object({
+  items: z.array(shopItemSchema).default([]),
+  wallet: z.record(z.string(), z.number()).default({}),
+})
+export type Shop = z.infer<typeof shopSchema>
+
 export const socketEventSchema = z.object({
   event: z.string(),
   payload: z.object({}).passthrough().default({}),

@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { Page, PageHeader } from '@/components/layout/page'
 import { Notice } from '@/components/ui/notice'
 import { useCampaigns, useMapState } from '@/features/game/queries'
@@ -12,8 +12,14 @@ const ROAD_STYLE: Record<string, { width: number; color: string }> = {
 
 export default function MapPage() {
   const campaigns = useCampaigns('active')
+  const navigate = useNavigate()
   const campaignId = campaigns.data?.[0]?.id ?? ''
   const map = useMapState(campaignId)
+
+  const goTo = (name: string) => {
+    sessionStorage.setItem('argo-next-command', `Идти в ${name}`)
+    navigate(`/play/${campaignId}`)
+  }
 
   if (campaigns.isLoading || map.isLoading) {
     return <Page><p className="text-sm text-muted-foreground">Загружаю карту Москвы…</p></Page>
@@ -72,7 +78,7 @@ export default function MapPage() {
             </text>
           ))}
           {nodes.map((node) => (
-            <g key={node.id}>
+            <g key={node.id} onClick={() => !node.current && goTo(node.name)} className={node.current ? '' : 'cursor-pointer'}>
               <circle
                 cx={node.x}
                 cy={node.y}

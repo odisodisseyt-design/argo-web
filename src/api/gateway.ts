@@ -5,12 +5,15 @@ import {
   allocateInputSchema,
   campaignStateSchema,
   characterSchema,
+  classSelectionSchema,
   inventorySchema,
+  inviteSchema,
   logPageSchema,
   mapStateSchema,
   basemapSchema,
   npcSchema,
   notificationSchema,
+  shopSchema,
   stepSchema,
   submitTurnResultSchema,
   turnStatusSchema,
@@ -21,11 +24,14 @@ import {
   type CampaignState,
   type Capabilities,
   type Character,
+  type ClassSelection,
   type Inventory,
+  type Invite,
   type Item,
   type LogPage,
   type MapState,
   type Npc,
+  type Shop,
   type SubmitTurnInput,
   type SubmitTurnResult,
   type TurnStatus,
@@ -56,6 +62,12 @@ export interface ArgoGateway {
   campaigns: {
     create(name: string): Promise<{ campaign_id: string }>
     list(scope: string): Promise<CampaignState[]>
+    listInvites(): Promise<Invite[]>
+    acceptInvite(inviteId: string): Promise<void>
+    classes(campaignId: string): Promise<ClassSelection>
+    chooseClass(campaignId: string, classId: string): Promise<void>
+    shop(campaignId: string): Promise<Shop>
+    buy(campaignId: string, itemId: string): Promise<void>
     respondInvitation(invitationId: string, accept: boolean): Promise<void>
     join(campaignId: string): Promise<void>
     getScene(campaignId: string): Promise<CampaignState>
@@ -151,6 +163,37 @@ const liveGateway: ArgoGateway = {
         schema: z.object({ campaigns: z.array(campaignStateSchema) }),
       })
       return data.campaigns
+    },
+    async listInvites() {
+      const data = await request('/api/invites', {
+        schema: z.object({ invites: z.array(inviteSchema) }),
+      })
+      return data.invites
+    },
+    async acceptInvite(inviteId) {
+      await request(`/api/invites/${encodeURIComponent(inviteId)}/accept`, {
+        method: 'POST', schema: z.object({ ok: z.boolean() }).passthrough(),
+      })
+    },
+    async classes(campaignId) {
+      return request(withId('/api/classes/{id}', campaignId), { schema: classSelectionSchema })
+    },
+    async chooseClass(campaignId, classId) {
+      await request('/api/class/choose', {
+        method: 'POST',
+        body: { campaign_id: campaignId, class_id: classId },
+        schema: z.object({ ok: z.boolean(), character: characterSchema }).passthrough(),
+      })
+    },
+    async shop(campaignId) {
+      return request(withId('/api/shop/{id}', campaignId), { schema: shopSchema })
+    },
+    async buy(campaignId, itemId) {
+      await request('/api/shop/buy', {
+        method: 'POST',
+        body: { campaign_id: campaignId, item_id: itemId },
+        schema: z.object({ ok: z.boolean() }).passthrough(),
+      })
     },
     async respondInvitation(invitationId) {
       await request(`/api/invites/${encodeURIComponent(invitationId)}/accept`, {
@@ -280,15 +323,32 @@ const liveGateway: ArgoGateway = {
           payload: z.object({}).passthrough(),
         })) }),
       })
-      return data.events.map((item) => notificationSchema.parse({
-        id: String(item.seq),
-        kind: item.event.includes('turn') ? 'turn_result' : 'campaign_event',
-        title: item.event.replace(/_/g, ' '),
-        body: '',
-        createdAt: '',
-        read: true,
-        campaignId: campaigns[0]!.id,
-      }))
+      const EVENT_TITLES: Record<string, string> = {
+        turn_final: 'Результат хода',
+        step_resolved: 'Шаг завершён',
+        orders_open: 'Новый приказ',
+        awaiting_orders: 'Ожидаем игроков',
+        order_submitted: 'Приказ принят',
+        order_timeout: 'Время приказа истекло',
+        character_updated: 'Персонаж изменён',
+        class_chosen: 'Выбран класс',
+        user_joined: 'Игрок присоединился',
+        member_left: 'Игрок вышел',
+      }
+      return data.events.map((item) => {
+        const payload = item.payload as { prose?: unknown; step_no?: unknown }
+        const prose = typeof payload.prose === 'string' ? payload.prose : ''
+        const step = typeof payload.step_no === 'number' ? ` · ход ${payload.step_no}` : ''
+        return notificationSchema.parse({
+          id: String(item.seq),
+          kind: item.event === 'turn_final' ? 'turn_result' : 'campaign_event',
+          title: (EVENT_TITLES[item.event] ?? item.event.replace(/_/g, ' ')) + step,
+          body: prose,
+          createdAt: '',
+          read: true,
+          campaignId: campaigns[0]!.id,
+        })
+      })
     },
     async markRead() {
       // Event history is read-only on the server; read state is local.

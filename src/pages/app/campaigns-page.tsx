@@ -6,7 +6,7 @@ import { Page, PageHeader } from '@/components/layout/page'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { toUserMessage } from '@/api/errors'
-import { useCampaigns } from '@/features/game/queries'
+import { useCampaigns, useInvites } from '@/features/game/queries'
 import { useGateway } from '@/features/auth/use-session'
 
 export default function CampaignsPage() {
@@ -14,6 +14,14 @@ export default function CampaignsPage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const campaigns = useCampaigns('active')
+  const invites = useInvites()
+  const acceptInvite = useMutation({
+    mutationFn: (id: string) => gateway.campaigns.acceptInvite(id),
+    onSuccess: () => {
+      void campaigns.refetch()
+      void invites.refetch()
+    },
+  })
   const create = useMutation({
     mutationFn: (name: string) => gateway.campaigns.create(name),
     onSuccess: (result) => {
@@ -46,6 +54,25 @@ export default function CampaignsPage() {
         </Button>
       </section>
       {create.isError && <Notice tone="danger">{toUserMessage(create.error)}</Notice>}
+
+      {(invites.data?.length ?? 0) > 0 && (
+        <section className="hud-panel flex flex-col gap-3 p-5">
+          <h2 className="hud-label">Приглашения</h2>
+          <ul className="flex flex-col gap-2">
+            {invites.data?.map((invite) => (
+              <li key={invite.id} className="flex items-center justify-between gap-3">
+                <span className="min-w-0 text-sm">
+                  {invite.campaign_name} <span className="text-muted-foreground">от {invite.inviter}</span>
+                </span>
+                <Button size="sm" onClick={() => acceptInvite.mutate(invite.id)} loading={acceptInvite.isPending}>
+                  Принять
+                </Button>
+              </li>
+            ))}
+          </ul>
+          {acceptInvite.isError && <Notice tone="danger">{toUserMessage(acceptInvite.error)}</Notice>}
+        </section>
+      )}
 
       <label className="relative">
         <span className="sr-only">Поиск кампаний</span>
