@@ -18,14 +18,15 @@ export default defineConfig({
         short_name: 'ARGO',
         description: 'ARGO — многопользовательская AI-RPG с живым игровым миром',
         lang: 'ru',
-        start_url: '/',
+        start_url: '/web/',
+        scope: '/web/',
         display: 'standalone',
         orientation: 'any',
         background_color: '#0a0c10',
         theme_color: '#0a0c10',
         icons: [
-          { src: '/icons/argo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icons/argo-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/web/icons/argo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/web/icons/argo-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

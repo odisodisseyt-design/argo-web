@@ -11,7 +11,7 @@ export function AuthLayout() {
       <ModeBanner />
       <div className="flex flex-1">
         <section className="relative hidden flex-1 overflow-hidden lg:flex" aria-hidden>
-          <img src="/images/auth-world.png" alt="" className="absolute inset-0 size-full object-cover" />
+          <img src={`${import.meta.env.BASE_URL}images/auth-world.png`} alt="" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <div className="relative mt-auto flex max-w-lg flex-col gap-3 p-12">
             <p className="hud-label text-primary">Система активирована</p>
@@ -22,7 +22,7 @@ export function AuthLayout() {
         </section>
         <div className="relative flex w-full flex-col lg:max-w-xl">
           <img
-            src="/images/auth-world.png"
+            src={`${import.meta.env.BASE_URL}images/auth-world.png`}
             alt=""
             className="absolute inset-x-0 top-0 h-56 w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent)] lg:hidden"
           />

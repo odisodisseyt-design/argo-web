@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Page, PageHeader } from '@/components/layout/page'
+import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { useCampaigns, useMapState } from '@/features/game/queries'
 
@@ -15,6 +17,7 @@ export default function MapPage() {
   const navigate = useNavigate()
   const campaignId = campaigns.data?.[0]?.id ?? ''
   const map = useMapState(campaignId)
+  const [showAll, setShowAll] = useState(false)
 
   const goTo = (name: string) => {
     sessionStorage.setItem('argo-next-command', `Идти в ${name}`)
@@ -35,6 +38,10 @@ export default function MapPage() {
   }
 
   const { basemap, nodes } = map.data
+  const current = nodes.find((node) => node.current)
+  const viewBox = !showAll && current
+    ? `${current.x - 170} ${current.y - 185} 340 370`
+    : `0 0 ${basemap.width} ${basemap.height}`
   const roads = Object.entries(basemap.roads ?? {}) as [string, unknown][]
 
   return (
@@ -43,10 +50,17 @@ export default function MapPage() {
         eyebrow="Карта"
         title="Москва"
         description="Только открытые места и дороги, которые известны твоему персонажу."
+        actions={
+          current ? (
+            <Button size="sm" variant="secondary" onClick={() => setShowAll((value) => !value)}>
+              {showAll ? 'Ко мне' : 'Вся Москва'}
+            </Button>
+          ) : undefined
+        }
       />
       <div className="hud-panel overflow-hidden">
         <svg
-          viewBox={`0 0 ${basemap.width} ${basemap.height}`}
+          viewBox={viewBox}
           className="block h-auto w-full"
           role="img"
           aria-label="Карта Москвы"
@@ -64,7 +78,7 @@ export default function MapPage() {
               <path key={kind} d={String(paths)} fill="none" stroke={style.color} strokeOpacity={0.4} strokeWidth={style.width} />
             )
           })}
-          {basemap.labels.map((label) => (
+          {showAll && basemap.labels.map((label) => (
             <text
               key={label.text}
               x={label.x}
@@ -87,9 +101,20 @@ export default function MapPage() {
                 stroke={node.current ? 'var(--primary)' : 'var(--accent)'}
                 strokeWidth={1.5}
               />
-              <text x={node.x + 8} y={node.y + 3} fontSize={9} fill="var(--foreground)">
-                {node.name}
-              </text>
+              {(showAll || node.current) && (
+                <text
+                  x={node.x + 10}
+                  y={node.y - 6}
+                  fontSize={showAll ? 9 : 14}
+                  fill="var(--foreground)"
+                  stroke="var(--surface)"
+                  strokeWidth={3}
+                  paintOrder="stroke"
+                  fontWeight={node.current ? 700 : 400}
+                >
+                  {node.name}
+                </text>
+              )}
             </g>
           ))}
         </svg>
