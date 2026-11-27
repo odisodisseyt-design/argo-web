@@ -4,9 +4,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Page, PageHeader } from '@/components/layout/page'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
+import { ItemIcon } from '@/components/game/item-icon'
 import { toUserMessage } from '@/api/errors'
 import {
   createIdempotencyKey,
+  gameKeys,
   useCampaignLog,
   useClassSelection,
   useScene,
@@ -53,10 +55,21 @@ export default function GamePage() {
   const living = data.living
   const turn = status.data
   const entries = log.data?.pages.flatMap((page) => page.entries) ?? []
+  const phaseNames: Record<string, string> = {
+    orders: 'сбор приказов', resolving: 'мир решает', results: 'итоги шага',
+    waiting: 'ожидание игроков', finished: 'игра завершена',
+  }
+  const phaseLabel = phaseNames[turn?.phase ?? data.phase] ?? (turn?.phase ?? data.phase)
+  const deadline = turn?.deadline
+    ? new Date(`${turn.deadline.replace(' ', 'T')}Z`).toLocaleTimeString('ru-RU', {
+        hour: '2-digit', minute: '2-digit',
+      })
+    : null
 
   const onSubmit = () => {
     const text = command.trim()
     if (!text || submit.isPending) return
+    const fromStep = status.data?.step ?? data.step_no
     submit.mutate(
       {
         input: { campaign_id: campaignId, command: text, clarification_id: clarificationId },
@@ -69,7 +82,21 @@ export default function GamePage() {
           } else {
             setCommand('')
             setClarificationId(null)
-            void log.refetch()
+            let tries = 0
+            const refresh = async () => {
+              tries += 1
+              const fresh = await queryClient.fetchQuery({
+                queryKey: gameKeys.turn(gateway.mode, campaignId),
+                queryFn: () => gateway.campaigns.getTurnStatus(campaignId),
+                staleTime: 0,
+              })
+              if (fresh.step > fromStep) {
+                await Promise.all([log.refetch(), scene.refetch(), status.refetch()])
+                return
+              }
+              if (tries < 15) window.setTimeout(() => void refresh(), 4000)
+            }
+            window.setTimeout(() => void refresh(), 4000)
           }
         },
       },
@@ -148,6 +175,31 @@ export default function GamePage() {
         </section>
       )}
 
+      {data.npcs.length > 0 && (
+        <section className="hud-panel flex flex-col gap-3 p-5" aria-label="Люди рядом">
+          <h2 className="hud-label">Люди рядом</h2>
+          <ul className="flex flex-col gap-2">
+            {data.npcs.slice(0, 4).map((npc) => {
+              const person = npc as { id: string; name: string; location?: string; activity?: string; emotion?: string }
+              return (
+                <li key={person.id} className="flex items-center justify-between gap-3 rounded-md border bg-surface-raised p-3">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{person.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {person.activity ?? person.location ?? 'рядом'}
+                      {person.emotion ? ` · ${person.emotion}` : ''}
+                    </span>
+                  </span>
+                  <Button size="sm" variant="secondary" onClick={() => onNearby(`Поговорить с ${person.name}`)}>
+                    Поговорить
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
       {classes.data?.pending && classes.data.offers.length > 0 && (
         <section className="hud-panel flex flex-col gap-3 p-5" aria-label="Выбор класса">
           <h2 className="hud-label">Выбери путь</h2>
@@ -198,9 +250,12 @@ export default function GamePage() {
           <ul className="flex flex-col divide-y">
             {shop.data.items.slice(0, 5).map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-3 py-2">
-                <span className="min-w-0">
+                <span className="flex min-w-0 items-center gap-3">
+                  <ItemIcon item={item} size={16} />
+                  <span className="min-w-0">
                   <span className="block truncate text-sm">{item.name}</span>
                   <span className="block text-xs text-muted-foreground">{item.price} {item.currency} · осталось {item.stock}</span>
+                  </span>
                 </span>
                 <Button size="sm" variant="secondary" disabled={item.stock < 1 || buy.isPending} onClick={() => buy.mutate(item.id)}>
                   Купить
@@ -216,7 +271,10 @@ export default function GamePage() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="hud-label">Что происходит</h2>
           <span className="text-xs text-muted-foreground">
-            {turn?.my_turn ? 'Твой ход' : data.my_turn ? 'Твой ход' : 'Ожидание'}
+            {phaseLabel}
+            {deadline ? ` · дедлайн ${deadline}` : ''}
+            {' · '}
+            {turn?.my_turn ?? data.my_turn ? 'твой ход' : 'ожидание'}
           </span>
         </div>
         <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1">

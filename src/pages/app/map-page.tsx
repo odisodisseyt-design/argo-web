@@ -91,6 +91,16 @@ export default function MapPage() {
               {label.text}
             </text>
           ))}
+          {nodes.flatMap((node) => node.connections.map((targetId) => {
+            const target = nodes.find((item) => item.id === targetId)
+            if (!target) return []
+            return [<line
+              key={`${node.id}-${targetId}`}
+              x1={node.x} y1={node.y} x2={target.x} y2={target.y}
+              stroke="var(--accent)" strokeOpacity={0.45} strokeWidth={1.6}
+              strokeDasharray="5 4"
+            />]
+          }))}
           {nodes.map((node) => (
             <g key={node.id} onClick={() => !node.current && goTo(node.name)} className={node.current ? '' : 'cursor-pointer'}>
               <circle
@@ -118,6 +128,12 @@ export default function MapPage() {
             </g>
           ))}
         </svg>
+      </div>
+      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-2"><span className="size-3 rounded-full bg-primary" /> ты</span>
+        <span className="flex items-center gap-2"><span className="size-3 rounded-full bg-accent" /> был здесь</span>
+        <span className="flex items-center gap-2"><span className="size-3 rounded-full border border-accent bg-surface" /> дорога известна</span>
+        <span className="flex items-center gap-2"><span className="h-0.5 w-5 border-t border-dashed border-accent" /> маршрут</span>
       </div>
       <p className="text-xs text-muted-foreground">Подложка: {basemap.attribution ?? '© OpenStreetMap contributors'}</p>
     </Page>

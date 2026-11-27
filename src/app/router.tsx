@@ -14,11 +14,11 @@ const NotificationsPage = lazy(() => import('@/pages/app/notifications-page'))
 const ProfilePage = lazy(() => import('@/pages/app/profile-page'))
 const IntegrationPage = lazy(() => import('@/pages/app/integration-page'))
 const NotFoundPage = lazy(() => import('@/pages/not-found-page'))
-const LoginPage = lazy(() => import('@/pages/auth/login-page'))
-const RegisterPage = lazy(() => import('@/pages/auth/register-page'))
-const ForgotPasswordPage = lazy(() => import('@/pages/auth/forgot-password-page'))
-const VerifyPage = lazy(() => import('@/pages/auth/verify-page'))
-const LogoutPage = lazy(() => import('@/pages/auth/logout-page'))
+import LoginPage from '@/pages/auth/login-page'
+import RegisterPage from '@/pages/auth/register-page'
+import ForgotPasswordPage from '@/pages/auth/forgot-password-page'
+import VerifyPage from '@/pages/auth/verify-page'
+import LogoutPage from '@/pages/auth/logout-page'
 
 export const router = createBrowserRouter([
   {

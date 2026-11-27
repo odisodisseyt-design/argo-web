@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Page, PageHeader } from '@/components/layout/page'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
+import { ItemIcon } from '@/components/game/item-icon'
 import { toUserMessage } from '@/api/errors'
 import { useGateway } from '@/features/auth/use-session'
 import { useAllocateAttribute, useCampaigns, useCharacterSheet, gameKeys } from '@/features/game/queries'
@@ -94,7 +95,9 @@ export default function CharacterPage() {
           <ul className="flex flex-col divide-y">
             {character.inventory.map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-3 py-3">
-                <span className="min-w-0">
+                <span className="flex min-w-0 items-center gap-3">
+                  <ItemIcon item={item} />
+                  <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">
                     {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ''}
                   </span>
@@ -116,6 +119,7 @@ export default function CharacterPage() {
                       Снять
                     </Button>
                   )}
+                </span>
                 </span>
               </li>
             ))}

@@ -70,6 +70,7 @@ export function useScene(campaignId: string) {
   return useQuery({
     queryKey: gameKeys.scene(g.mode, campaignId),
     queryFn: () => g.campaigns.getScene(campaignId),
+    enabled: Boolean(campaignId),
     staleTime: STALE,
     retry: retryTransient,
   })
@@ -84,6 +85,7 @@ export function useTurnStatus(campaignId: string) {
   return useQuery({
     queryKey: gameKeys.turn(g.mode, campaignId),
     queryFn: () => g.campaigns.getTurnStatus(campaignId),
+    enabled: Boolean(campaignId),
     refetchInterval: g.mode === 'demo' ? 2000 : 20_000,
     staleTime: 0,
     retry: retryTransient,
@@ -95,6 +97,7 @@ export function useCampaignLog(campaignId: string) {
   return useInfiniteQuery({
     queryKey: gameKeys.log(g.mode, campaignId),
     queryFn: ({ pageParam }) => g.campaigns.getLog(campaignId, pageParam),
+    enabled: Boolean(campaignId),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
     staleTime: STALE,
@@ -104,22 +107,22 @@ export function useCampaignLog(campaignId: string) {
 
 export function useNpcs(campaignId: string) {
   const g = useGateway()
-  return useQuery({ queryKey: gameKeys.npcs(g.mode, campaignId), queryFn: () => g.campaigns.getNpcs(campaignId), staleTime: STALE, retry: retryTransient })
+  return useQuery({ queryKey: gameKeys.npcs(g.mode, campaignId), queryFn: () => g.campaigns.getNpcs(campaignId), enabled: Boolean(campaignId), staleTime: STALE, retry: retryTransient })
 }
 
 export function useMapState(campaignId: string) {
   const g = useGateway()
-  return useQuery({ queryKey: gameKeys.map(g.mode, campaignId), queryFn: () => g.campaigns.getMap(campaignId), staleTime: STALE, retry: retryTransient })
+  return useQuery({ queryKey: gameKeys.map(g.mode, campaignId), queryFn: () => g.campaigns.getMap(campaignId), enabled: Boolean(campaignId), staleTime: STALE, retry: retryTransient })
 }
 
 export function useCharacterSheet(campaignId: string) {
   const g = useGateway()
-  return useQuery({ queryKey: gameKeys.sheet(g.mode, campaignId), queryFn: () => g.character.getSheet(campaignId), staleTime: STALE, retry: retryTransient })
+  return useQuery({ queryKey: gameKeys.sheet(g.mode, campaignId), queryFn: () => g.character.getSheet(campaignId), enabled: Boolean(campaignId), staleTime: STALE, retry: retryTransient })
 }
 
 export function useInventory(campaignId: string) {
   const g = useGateway()
-  return useQuery({ queryKey: gameKeys.inventory(g.mode, campaignId), queryFn: () => g.character.getInventory(campaignId), staleTime: STALE, retry: retryTransient })
+  return useQuery({ queryKey: gameKeys.inventory(g.mode, campaignId), queryFn: () => g.character.getInventory(campaignId), enabled: Boolean(campaignId), staleTime: STALE, retry: retryTransient })
 }
 
 export function useInvites() {
@@ -137,6 +140,7 @@ export function useClassSelection(campaignId: string) {
   return useQuery({
     queryKey: gameKeys.classes(g.mode, campaignId),
     queryFn: () => g.campaigns.classes(campaignId),
+    enabled: Boolean(campaignId),
     retry: retryTransient,
   })
 }
@@ -146,6 +150,7 @@ export function useShop(campaignId: string) {
   return useQuery({
     queryKey: gameKeys.shop(g.mode, campaignId),
     queryFn: () => g.campaigns.shop(campaignId),
+    enabled: Boolean(campaignId),
     staleTime: STALE,
     retry: retryTransient,
   })

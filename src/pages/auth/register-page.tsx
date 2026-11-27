@@ -1,16 +1,17 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router'
 import { RegisterInputSchema, type RegisterInput } from '@/api/schemas/auth'
 import { toUserMessage } from '@/api/errors'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Notice } from '@/components/ui/notice'
-import { useGateway } from '@/features/auth/use-session'
+import { useGateway, sessionKey } from '@/features/auth/use-session'
 
 export default function RegisterPage() {
   const gateway = useGateway()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { register, handleSubmit, formState } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterInputSchema),
@@ -22,7 +23,12 @@ export default function RegisterPage() {
   })
 
   const onSubmit = handleSubmit((values) =>
-    mutation.mutate(values, { onSuccess: () => navigate('/', { replace: true }) }),
+    mutation.mutate(values, {
+      onSuccess: (res) => {
+        queryClient.setQueryData(sessionKey(gateway.mode), res.viewer)
+        navigate('/', { replace: true })
+      },
+    }),
   )
 
   return (

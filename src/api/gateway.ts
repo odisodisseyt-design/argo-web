@@ -52,7 +52,7 @@ export interface ArgoGateway {
   auth: {
     getSession(): Promise<Viewer | null>
     login(input: LoginInput): Promise<Viewer>
-    register(input: RegisterInput): Promise<{ requiresVerification: boolean }>
+    register(input: RegisterInput): Promise<{ requiresVerification: boolean; viewer: Viewer }>
     requestPasswordReset(input: { email: string }): Promise<void>
     verifyAccount(code: string): Promise<void>
     logout(): Promise<void>
@@ -120,7 +120,7 @@ const liveGateway: ArgoGateway = {
         schema: authResultSchema,
       })
       setAccessToken(result.token)
-      return { requiresVerification: false }
+      return { requiresVerification: false, viewer: viewerFromUser(result.user) }
     },
     async requestPasswordReset(_input: { email: string }) {
       return notIntegrated('auth.passwordReset')
